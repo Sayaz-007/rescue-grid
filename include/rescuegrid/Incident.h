@@ -97,6 +97,36 @@ public:
     std::string getStatusString() const;
 
     /**
+     * @brief Checks if resources are currently assigned to this incident.
+     * @return True if a responder and vehicle are assigned.
+     */
+    bool hasAssignedResources() const;
+
+    /**
+     * @brief Gets the identifier of the assigned responder.
+     * @return Reference to the responder ID string (empty if unassigned).
+     */
+    const std::string& getAssignedResponderId() const;
+
+    /**
+     * @brief Gets the identifier of the assigned rescue vehicle.
+     * @return Reference to the vehicle ID string (empty if unassigned).
+     */
+    const std::string& getAssignedVehicleId() const;
+
+    /**
+     * @brief Assigns resources to this incident.
+     * @param responderId Identifier of the assigned responder.
+     * @param vehicleId Identifier of the assigned rescue vehicle.
+     */
+    void assignResources(const std::string& responderId, const std::string& vehicleId);
+
+    /**
+     * @brief Releases assigned resources from this incident.
+     */
+    void releaseResources();
+
+    /**
      * @brief Formats full incident details as a readable string.
      * @return Formatted multi-property string.
      */
@@ -113,6 +143,8 @@ private:
     int m_severity;
     Position m_position;
     IncidentStatus m_status;
+    std::string m_assignedResponderId;
+    std::string m_assignedVehicleId;
 };
 
 } // namespace rescuegrid

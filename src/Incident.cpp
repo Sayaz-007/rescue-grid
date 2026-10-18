@@ -14,7 +14,9 @@ Incident::Incident(const std::string& id,
       m_type(type),
       m_severity(severity),
       m_position(position),
-      m_status(status) {
+      m_status(status),
+      m_assignedResponderId(""),
+      m_assignedVehicleId("") {
     if (m_id.empty()) {
         throw std::invalid_argument("Incident ID cannot be empty.");
     }
@@ -74,12 +76,40 @@ std::string Incident::getStatusString() const {
     }
 }
 
+bool Incident::hasAssignedResources() const {
+    return !m_assignedResponderId.empty() && !m_assignedVehicleId.empty();
+}
+
+const std::string& Incident::getAssignedResponderId() const {
+    return m_assignedResponderId;
+}
+
+const std::string& Incident::getAssignedVehicleId() const {
+    return m_assignedVehicleId;
+}
+
+void Incident::assignResources(const std::string& responderId, const std::string& vehicleId) {
+    m_assignedResponderId = responderId;
+    m_assignedVehicleId = vehicleId;
+}
+
+void Incident::releaseResources() {
+    m_assignedResponderId.clear();
+    m_assignedVehicleId.clear();
+}
+
 std::string Incident::toString() const {
-    return "Incident [ID: " + m_id +
+    std::string result = "Incident [ID: " + m_id +
            ", Type: " + getTypeString() +
            ", Severity: " + std::to_string(m_severity) + "/5" +
            ", Location: " + m_position.toString() +
-           ", Status: " + getStatusString() + "]";
+           ", Status: " + getStatusString();
+    if (hasAssignedResources()) {
+        result += ", Assigned: (Responder: " + m_assignedResponderId +
+                  ", Vehicle: " + m_assignedVehicleId + ")";
+    }
+    result += "]";
+    return result;
 }
 
 void Incident::display() const {

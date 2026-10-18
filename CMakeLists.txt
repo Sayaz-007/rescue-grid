@@ -20,6 +20,7 @@ add_library(rescuegrid_core STATIC
     src/Incident.cpp
     src/Responder.cpp
     src/RescueVehicle.cpp
+    src/RescueManager.cpp
 )
 
 target_include_directories(rescuegrid_core

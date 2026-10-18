@@ -2,6 +2,7 @@
 #include "rescuegrid/Incident.h"
 #include "rescuegrid/Responder.h"
 #include "rescuegrid/RescueVehicle.h"
+#include "rescuegrid/RescueManager.h"
 
 #include <iostream>
 #include <string>
@@ -43,6 +44,10 @@ using namespace rescuegrid;
             return false; \
         } \
     } while (false)
+
+// ============================================================================
+// Phase 2 Core Tests (Preserved)
+// ============================================================================
 
 bool testPositionCoordinates() {
     std::cout << "Running testPositionCoordinates...\n";
@@ -202,36 +207,445 @@ bool testRescueVehicleConstructionAndUpdates() {
     return true;
 }
 
+// ============================================================================
+// Phase 3 Manager, Search, and Dispatch Tests
+// ============================================================================
+
+bool testManagerRegistrationAndListing() {
+    std::cout << "Running testManagerRegistrationAndListing...\n";
+
+    RescueManager manager;
+    EXPECT_EQ(manager.getIncidentCount(), 0, "Initial incident count should be 0");
+    EXPECT_EQ(manager.getResponderCount(), 0, "Initial responder count should be 0");
+    EXPECT_EQ(manager.getVehicleCount(), 0, "Initial vehicle count should be 0");
+
+    // Register incidents
+    manager.registerIncident(Incident("INC-1", IncidentType::Fire, 3, Position(10, 10)));
+    manager.registerIncident(Incident("INC-2", IncidentType::Flood, 5, Position(20, 20)));
+    EXPECT_EQ(manager.getIncidentCount(), 2, "Incident count after registration");
+    EXPECT_EQ(manager.getIncidents()[0].getId(), "INC-1", "First incident ID");
+    EXPECT_EQ(manager.getIncidents()[1].getId(), "INC-2", "Second incident ID");
+
+    // Register responders
+    manager.registerResponder(Responder("R-1", "Alice", ResponderSpecialization::Firefighter, Position(0, 0)));
+    manager.registerResponder(Responder("R-2", "Bob", ResponderSpecialization::Paramedic, Position(0, 0)));
+    EXPECT_EQ(manager.getResponderCount(), 2, "Responder count after registration");
+    EXPECT_EQ(manager.getAvailableResponderCount(), 2, "Available responder count");
+
+    // Register vehicles
+    manager.registerVehicle(RescueVehicle("V-1", VehicleType::FireEngine, Position(0, 0)));
+    manager.registerVehicle(RescueVehicle("V-2", VehicleType::Ambulance, Position(0, 0)));
+    EXPECT_EQ(manager.getVehicleCount(), 2, "Vehicle count after registration");
+    EXPECT_EQ(manager.getAvailableVehicleCount(), 2, "Available vehicle count");
+
+    return true;
+}
+
+bool testManagerSearchAndDuplicateHandling() {
+    std::cout << "Running testManagerSearchAndDuplicateHandling...\n";
+
+    RescueManager manager;
+    manager.registerIncident(Incident("INC-A", IncidentType::Fire, 2, Position(5, 5)));
+    manager.registerResponder(Responder("R-A", "Carlos", ResponderSpecialization::RescueSpecialist, Position(0, 0)));
+    manager.registerVehicle(RescueVehicle("V-A", VehicleType::RescueVan, Position(0, 0)));
+
+    // Existing searches
+    const Incident* foundInc = manager.findIncident("INC-A");
+    EXPECT_TRUE(foundInc != nullptr, "Incident INC-A should be found");
+    EXPECT_EQ(foundInc->getId(), "INC-A", "Found incident ID matches");
+    EXPECT_EQ(foundInc->getSeverity(), 2, "Found incident severity matches");
+
+    EXPECT_TRUE(manager.hasIncident("INC-A"), "hasIncident returns true for INC-A");
+    EXPECT_TRUE(manager.hasResponder("R-A"), "hasResponder returns true for R-A");
+    EXPECT_TRUE(manager.hasVehicle("V-A"), "hasVehicle returns true for V-A");
+
+    // Missing searches
+    EXPECT_TRUE(manager.findIncident("NON-EXISTENT") == nullptr, "Missing incident returns nullptr");
+    EXPECT_TRUE(manager.findResponder("NON-EXISTENT") == nullptr, "Missing responder returns nullptr");
+    EXPECT_TRUE(manager.findVehicle("NON-EXISTENT") == nullptr, "Missing vehicle returns nullptr");
+    EXPECT_TRUE(!manager.hasIncident("NON-EXISTENT"), "hasIncident returns false for missing ID");
+
+    // Duplicate registrations
+    EXPECT_THROW(
+        manager.registerIncident(Incident("INC-A", IncidentType::Flood, 1, Position(1, 1))),
+        std::invalid_argument,
+        "Duplicate incident registration should throw invalid_argument"
+    );
+
+    EXPECT_THROW(
+        manager.registerResponder(Responder("R-A", "Duplicate Name", ResponderSpecialization::Paramedic, Position(0, 0))),
+        std::invalid_argument,
+        "Duplicate responder registration should throw invalid_argument"
+    );
+
+    EXPECT_THROW(
+        manager.registerVehicle(RescueVehicle("V-A", VehicleType::FireEngine, Position(0, 0))),
+        std::invalid_argument,
+        "Duplicate vehicle registration should throw invalid_argument"
+    );
+
+    return true;
+}
+
+bool testDispatchResourcesSuccess() {
+    std::cout << "Running testDispatchResourcesSuccess...\n";
+
+    RescueManager manager;
+    manager.registerIncident(Incident("INC-DISP", IncidentType::Fire, 4, Position(50, 75)));
+    manager.registerResponder(Responder("R-DISP", "Elena", ResponderSpecialization::Firefighter, Position(0, 0)));
+    manager.registerVehicle(RescueVehicle("V-DISP", VehicleType::FireEngine, Position(0, 0)));
+
+    EXPECT_EQ(manager.getAvailableResponderCount(), 1, "Initially 1 available responder");
+    EXPECT_EQ(manager.getAvailableVehicleCount(), 1, "Initially 1 available vehicle");
+
+    // Execute dispatch
+    bool result = manager.dispatchResources("INC-DISP");
+    EXPECT_TRUE(result, "Dispatch should return true on success");
+
+    // Verify incident state
+    const Incident* inc = manager.findIncident("INC-DISP");
+    EXPECT_TRUE(inc != nullptr, "Incident must exist");
+    EXPECT_EQ(inc->getStatus(), IncidentStatus::InProgress, "Incident status should be InProgress");
+    EXPECT_TRUE(inc->hasAssignedResources(), "Incident should have assigned resources");
+    EXPECT_EQ(inc->getAssignedResponderId(), "R-DISP", "Assigned responder ID match");
+    EXPECT_EQ(inc->getAssignedVehicleId(), "V-DISP", "Assigned vehicle ID match");
+
+    // Verify responder state
+    const Responder* resp = manager.findResponder("R-DISP");
+    EXPECT_TRUE(resp != nullptr, "Responder must exist");
+    EXPECT_TRUE(!resp->isAvailable(), "Responder should now be unavailable");
+    EXPECT_EQ(resp->getPosition().getX(), 50, "Responder moved to incident X");
+    EXPECT_EQ(resp->getPosition().getY(), 75, "Responder moved to incident Y");
+
+    // Verify vehicle state
+    const RescueVehicle* veh = manager.findVehicle("V-DISP");
+    EXPECT_TRUE(veh != nullptr, "Vehicle must exist");
+    EXPECT_TRUE(!veh->isAvailable(), "Vehicle should now be unavailable");
+    EXPECT_EQ(veh->getPosition().getX(), 50, "Vehicle moved to incident X");
+    EXPECT_EQ(veh->getPosition().getY(), 75, "Vehicle moved to incident Y");
+
+    EXPECT_EQ(manager.getAvailableResponderCount(), 0, "0 available responders remaining");
+    EXPECT_EQ(manager.getAvailableVehicleCount(), 0, "0 available vehicles remaining");
+
+    return true;
+}
+
+bool testDispatchResourcesUnavailableAndRejection() {
+    std::cout << "Running testDispatchResourcesUnavailableAndRejection...\n";
+
+    RescueManager manager;
+
+    // 1. Dispatching to non-existent incident
+    EXPECT_THROW(
+        manager.dispatchResources("MISSING-INC"),
+        std::invalid_argument,
+        "Dispatch to missing incident should throw invalid_argument"
+    );
+
+    // 2. Incident exists, but no responders or vehicles registered
+    manager.registerIncident(Incident("INC-NO-RES", IncidentType::Flood, 3, Position(10, 10)));
+    EXPECT_THROW(
+        manager.dispatchResources("INC-NO-RES"),
+        std::runtime_error,
+        "Dispatch with no responders should throw runtime_error"
+    );
+
+    // 3. Responder registered, but no vehicles registered
+    manager.registerResponder(Responder("R-1", "Dan", ResponderSpecialization::Paramedic, Position(0, 0)));
+    EXPECT_THROW(
+        manager.dispatchResources("INC-NO-RES"),
+        std::runtime_error,
+        "Dispatch with no vehicles should throw runtime_error"
+    );
+
+    // 4. Vehicle registered -> now dispatch can succeed
+    manager.registerVehicle(RescueVehicle("V-1", VehicleType::Ambulance, Position(0, 0)));
+    manager.dispatchResources("INC-NO-RES");
+
+    // 5. Attempting to dispatch again to an incident already InProgress
+    EXPECT_THROW(
+        manager.dispatchResources("INC-NO-RES"),
+        std::logic_error,
+        "Dispatch to already InProgress incident should throw logic_error"
+    );
+
+    // 6. Attempting to dispatch to a Resolved incident
+    manager.registerIncident(Incident("INC-RESOLVED", IncidentType::Fire, 1, Position(2, 2), IncidentStatus::Resolved));
+    EXPECT_THROW(
+        manager.dispatchResources("INC-RESOLVED"),
+        std::logic_error,
+        "Dispatch to already Resolved incident should throw logic_error"
+    );
+
+    return true;
+}
+
+bool testPreventDoubleAssignment() {
+    std::cout << "Running testPreventDoubleAssignment...\n";
+
+    RescueManager manager;
+    manager.registerIncident(Incident("INC-1", IncidentType::Fire, 2, Position(10, 10)));
+    manager.registerIncident(Incident("INC-2", IncidentType::Flood, 4, Position(20, 20)));
+
+    // Register only ONE responder and ONE vehicle
+    manager.registerResponder(Responder("R-SOLE", "Solo Responder", ResponderSpecialization::RescueSpecialist, Position(0, 0)));
+    manager.registerVehicle(RescueVehicle("V-SOLE", VehicleType::RescueVan, Position(0, 0)));
+
+    // Dispatch INC-1
+    manager.dispatchResources("INC-1");
+
+    // Attempt to dispatch INC-2: must fail because all resources are busy
+    EXPECT_THROW(
+        manager.dispatchResources("INC-2"),
+        std::runtime_error,
+        "Dispatching INC-2 with busy resources should throw runtime_error"
+    );
+
+    // Verify INC-2 was NOT modified
+    const Incident* inc2 = manager.findIncident("INC-2");
+    EXPECT_EQ(inc2->getStatus(), IncidentStatus::Reported, "INC-2 must remain Reported");
+    EXPECT_TRUE(!inc2->hasAssignedResources(), "INC-2 must not have resources assigned");
+
+    return true;
+}
+
+bool testStatusUpdateAndResourceRelease() {
+    std::cout << "Running testStatusUpdateAndResourceRelease...\n";
+
+    RescueManager manager;
+    manager.registerIncident(Incident("INC-X", IncidentType::Fire, 3, Position(30, 30)));
+    manager.registerIncident(Incident("INC-Y", IncidentType::Flood, 2, Position(40, 40)));
+
+    manager.registerResponder(Responder("R-SHARED", "Shared Responder", ResponderSpecialization::Firefighter, Position(0, 0)));
+    manager.registerVehicle(RescueVehicle("V-SHARED", VehicleType::FireEngine, Position(0, 0)));
+
+    // Dispatch INC-X
+    manager.dispatchResources("INC-X");
+    EXPECT_EQ(manager.getAvailableResponderCount(), 0, "No available responders while INC-X in progress");
+
+    // Resolve INC-X
+    manager.updateIncidentStatus("INC-X", IncidentStatus::Resolved);
+
+    // Verify INC-X resolved and resources freed
+    const Incident* incX = manager.findIncident("INC-X");
+    EXPECT_EQ(incX->getStatus(), IncidentStatus::Resolved, "INC-X is Resolved");
+    EXPECT_TRUE(!incX->hasAssignedResources(), "INC-X released resource bindings");
+
+    const Responder* resp = manager.findResponder("R-SHARED");
+    EXPECT_TRUE(resp->isAvailable(), "Responder is available again after INC-X resolution");
+
+    const RescueVehicle* veh = manager.findVehicle("V-SHARED");
+    EXPECT_TRUE(veh->isAvailable(), "Vehicle is available again after INC-X resolution");
+
+    EXPECT_EQ(manager.getAvailableResponderCount(), 1, "1 available responder after release");
+    EXPECT_EQ(manager.getAvailableVehicleCount(), 1, "1 available vehicle after release");
+
+    // Now INC-Y can be dispatched successfully using the released resources!
+    bool yResult = manager.dispatchResources("INC-Y");
+    EXPECT_TRUE(yResult, "INC-Y dispatch succeeds using freed resources");
+
+    const Incident* incY = manager.findIncident("INC-Y");
+    EXPECT_EQ(incY->getStatus(), IncidentStatus::InProgress, "INC-Y is now InProgress");
+    EXPECT_EQ(incY->getAssignedResponderId(), "R-SHARED", "INC-Y assigned to R-SHARED");
+
+    // Non-existent incident status update throws invalid_argument
+    EXPECT_THROW(
+        manager.updateIncidentStatus("MISSING", IncidentStatus::Resolved),
+        std::invalid_argument,
+        "Updating non-existent incident should throw invalid_argument"
+    );
+
+    return true;
+}
+
+bool testIncidentLifecycleAndInvalidTransitions() {
+    std::cout << "Running testIncidentLifecycleAndInvalidTransitions...\n";
+
+    RescueManager manager;
+
+    // 1. Attempting to mark an incident InProgress without a successful dispatch
+    manager.registerIncident(Incident("INC-L1", IncidentType::Fire, 2, Position(10, 10)));
+    EXPECT_THROW(
+        manager.updateIncidentStatus("INC-L1", IncidentStatus::InProgress),
+        std::logic_error,
+        "Direct Reported -> InProgress transition without dispatch must throw logic_error"
+    );
+    const Incident* incL1 = manager.findIncident("INC-L1");
+    EXPECT_EQ(incL1->getStatus(), IncidentStatus::Reported, "Incident must remain Reported after rejected transition");
+    EXPECT_TRUE(!incL1->hasAssignedResources(), "Incident must have no assigned resources");
+
+    // 2. Dispatch resources to make INC-L1 active (InProgress)
+    manager.registerResponder(Responder("R-L1", "Responder 1", ResponderSpecialization::Firefighter, Position(0, 0)));
+    manager.registerVehicle(RescueVehicle("V-L1", VehicleType::FireEngine, Position(0, 0)));
+    manager.dispatchResources("INC-L1");
+
+    EXPECT_EQ(incL1->getStatus(), IncidentStatus::InProgress, "INC-L1 is now InProgress");
+    EXPECT_TRUE(incL1->hasAssignedResources(), "INC-L1 now has assigned resources");
+    const Responder* respL1 = manager.findResponder("R-L1");
+    const RescueVehicle* vehL1 = manager.findVehicle("V-L1");
+    EXPECT_TRUE(!respL1->isAvailable(), "R-L1 is unavailable during active dispatch");
+    EXPECT_TRUE(!vehL1->isAvailable(), "V-L1 is unavailable during active dispatch");
+
+    // 3. Attempting to move an active incident with assigned resources back to Reported
+    EXPECT_THROW(
+        manager.updateIncidentStatus("INC-L1", IncidentStatus::Reported),
+        std::logic_error,
+        "Active incident cannot be reverted from InProgress to Reported"
+    );
+
+    // Confirm rejected transition leaves resource assignments and availability unchanged
+    EXPECT_EQ(incL1->getStatus(), IncidentStatus::InProgress, "INC-L1 must remain InProgress");
+    EXPECT_TRUE(incL1->hasAssignedResources(), "INC-L1 must still retain assigned resources");
+    EXPECT_EQ(incL1->getAssignedResponderId(), "R-L1", "Assigned responder must still be R-L1");
+    EXPECT_EQ(incL1->getAssignedVehicleId(), "V-L1", "Assigned vehicle must still be V-L1");
+    EXPECT_TRUE(!respL1->isAvailable(), "R-L1 must remain unavailable after rejected transition");
+    EXPECT_TRUE(!vehL1->isAvailable(), "V-L1 must remain unavailable after rejected transition");
+
+    // 4. Valid resolution releases assigned resources
+    manager.updateIncidentStatus("INC-L1", IncidentStatus::Resolved);
+    EXPECT_EQ(incL1->getStatus(), IncidentStatus::Resolved, "INC-L1 is now Resolved");
+    EXPECT_TRUE(!incL1->hasAssignedResources(), "INC-L1 resources must be cleared");
+    EXPECT_TRUE(respL1->isAvailable(), "R-L1 must be released to available");
+    EXPECT_TRUE(vehL1->isAvailable(), "V-L1 must be released to available");
+
+    // 5. Attempting to reopen a Resolved incident
+    EXPECT_THROW(
+        manager.updateIncidentStatus("INC-L1", IncidentStatus::Reported),
+        std::logic_error,
+        "Resolved incident cannot be reopened to Reported"
+    );
+    EXPECT_THROW(
+        manager.updateIncidentStatus("INC-L1", IncidentStatus::InProgress),
+        std::logic_error,
+        "Resolved incident cannot be reopened to InProgress"
+    );
+    EXPECT_THROW(
+        manager.updateIncidentStatus("INC-L1", IncidentStatus::Resolved),
+        std::logic_error,
+        "Resolved incident cannot transition to Resolved again"
+    );
+    EXPECT_THROW(
+        manager.dispatchResources("INC-L1"),
+        std::logic_error,
+        "Resolved incident cannot receive dispatch"
+    );
+    EXPECT_EQ(incL1->getStatus(), IncidentStatus::Resolved, "INC-L1 remains Resolved");
+
+    // 6. Direct Reported -> Resolved transition without dispatch (e.g. false alarm)
+    manager.registerIncident(Incident("INC-L2", IncidentType::Flood, 1, Position(20, 20)));
+    manager.updateIncidentStatus("INC-L2", IncidentStatus::Resolved);
+    const Incident* incL2 = manager.findIncident("INC-L2");
+    EXPECT_EQ(incL2->getStatus(), IncidentStatus::Resolved, "Reported incident directly resolved");
+    EXPECT_TRUE(!incL2->hasAssignedResources(), "Directly resolved incident has no assigned resources");
+    EXPECT_THROW(
+        manager.updateIncidentStatus("INC-L2", IncidentStatus::Reported),
+        std::logic_error,
+        "Directly resolved incident cannot be reopened"
+    );
+
+    // 7. Resolving one incident must NOT release resources belonging to another incident
+    RescueManager isoManager;
+    isoManager.registerIncident(Incident("INC-ISO1", IncidentType::Fire, 3, Position(30, 30)));
+    isoManager.registerIncident(Incident("INC-ISO2", IncidentType::Flood, 4, Position(40, 40)));
+    isoManager.registerResponder(Responder("R-ISO1", "Resp ISO 1", ResponderSpecialization::Firefighter, Position(0, 0)));
+    isoManager.registerResponder(Responder("R-ISO2", "Resp ISO 2", ResponderSpecialization::Paramedic, Position(0, 0)));
+    isoManager.registerVehicle(RescueVehicle("V-ISO1", VehicleType::FireEngine, Position(0, 0)));
+    isoManager.registerVehicle(RescueVehicle("V-ISO2", VehicleType::Ambulance, Position(0, 0)));
+
+    isoManager.dispatchResources("INC-ISO1");
+    isoManager.dispatchResources("INC-ISO2");
+
+    // Both incidents are active
+    const Incident* incIso1 = isoManager.findIncident("INC-ISO1");
+    const Incident* incIso2 = isoManager.findIncident("INC-ISO2");
+    const Responder* respIso1 = isoManager.findResponder("R-ISO1");
+    const Responder* respIso2 = isoManager.findResponder("R-ISO2");
+    const RescueVehicle* vehIso1 = isoManager.findVehicle("V-ISO1");
+    const RescueVehicle* vehIso2 = isoManager.findVehicle("V-ISO2");
+
+    EXPECT_TRUE(!respIso1->isAvailable(), "R-ISO1 busy with INC-ISO1");
+    EXPECT_TRUE(!respIso2->isAvailable(), "R-ISO2 busy with INC-ISO2");
+
+    // Resolve INC-ISO1 only
+    isoManager.updateIncidentStatus("INC-ISO1", IncidentStatus::Resolved);
+
+    // Verify INC-ISO1 freed its resources
+    EXPECT_EQ(incIso1->getStatus(), IncidentStatus::Resolved, "INC-ISO1 is resolved");
+    EXPECT_TRUE(respIso1->isAvailable(), "R-ISO1 is now available");
+    EXPECT_TRUE(vehIso1->isAvailable(), "V-ISO1 is now available");
+
+    // Verify INC-ISO2 resources are UNTOUCHED
+    EXPECT_EQ(incIso2->getStatus(), IncidentStatus::InProgress, "INC-ISO2 remains InProgress");
+    EXPECT_TRUE(incIso2->hasAssignedResources(), "INC-ISO2 retains assigned resources");
+    EXPECT_EQ(incIso2->getAssignedResponderId(), "R-ISO2", "INC-ISO2 still assigned to R-ISO2");
+    EXPECT_EQ(incIso2->getAssignedVehicleId(), "V-ISO2", "INC-ISO2 still assigned to V-ISO2");
+    EXPECT_TRUE(!respIso2->isAvailable(), "R-ISO2 remains unavailable");
+    EXPECT_TRUE(!vehIso2->isAvailable(), "V-ISO2 remains unavailable");
+
+    return true;
+}
+
+// ============================================================================
+// Test Suite Runner
+// ============================================================================
+
 int main() {
     std::cout << "========================================\n";
-    std::cout << "    RescueGrid Core Classes Unit Tests  \n";
+    std::cout << "   RescueGrid Comprehensive Unit Tests  \n";
     std::cout << "========================================\n";
 
     int passed = 0;
-    int total = 5;
+    int total = 12;
 
+    // Phase 2 Core Tests
     if (testPositionCoordinates()) {
         std::cout << "  [PASS] testPositionCoordinates\n";
         passed++;
     }
-
     if (testIncidentConstructionAndValidation()) {
         std::cout << "  [PASS] testIncidentConstructionAndValidation\n";
         passed++;
     }
-
     if (testIncidentStatusUpdates()) {
         std::cout << "  [PASS] testIncidentStatusUpdates\n";
         passed++;
     }
-
     if (testResponderConstructionAndUpdates()) {
         std::cout << "  [PASS] testResponderConstructionAndUpdates\n";
         passed++;
     }
-
     if (testRescueVehicleConstructionAndUpdates()) {
         std::cout << "  [PASS] testRescueVehicleConstructionAndUpdates\n";
+        passed++;
+    }
+
+    // Phase 3 Manager, Search, and Dispatch Tests
+    if (testManagerRegistrationAndListing()) {
+        std::cout << "  [PASS] testManagerRegistrationAndListing\n";
+        passed++;
+    }
+    if (testManagerSearchAndDuplicateHandling()) {
+        std::cout << "  [PASS] testManagerSearchAndDuplicateHandling\n";
+        passed++;
+    }
+    if (testDispatchResourcesSuccess()) {
+        std::cout << "  [PASS] testDispatchResourcesSuccess\n";
+        passed++;
+    }
+    if (testDispatchResourcesUnavailableAndRejection()) {
+        std::cout << "  [PASS] testDispatchResourcesUnavailableAndRejection\n";
+        passed++;
+    }
+    if (testPreventDoubleAssignment()) {
+        std::cout << "  [PASS] testPreventDoubleAssignment\n";
+        passed++;
+    }
+    if (testStatusUpdateAndResourceRelease()) {
+        std::cout << "  [PASS] testStatusUpdateAndResourceRelease\n";
+        passed++;
+    }
+    if (testIncidentLifecycleAndInvalidTransitions()) {
+        std::cout << "  [PASS] testIncidentLifecycleAndInvalidTransitions\n";
         passed++;
     }
 
