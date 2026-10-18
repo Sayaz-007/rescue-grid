@@ -14,23 +14,51 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 # Export compile commands for tool integration
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
+# Core domain library
+add_library(rescuegrid_core STATIC
+    src/Position.cpp
+    src/Incident.cpp
+    src/Responder.cpp
+    src/RescueVehicle.cpp
+)
+
+target_include_directories(rescuegrid_core
+    PUBLIC
+        $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+        $<INSTALL_INTERFACE:include>
+    PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR}/src
+)
+
 # Application executable target
 add_executable(RescueGrid
     src/main.cpp
 )
 
-# Include directories
-target_include_directories(RescueGrid
-    PRIVATE
-        ${CMAKE_CURRENT_SOURCE_DIR}/src
-    PUBLIC
-        $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
-        $<INSTALL_INTERFACE:include>
-)
+target_link_libraries(RescueGrid PRIVATE rescuegrid_core)
 
 # Compiler warning flags
 if(MSVC)
+    target_compile_options(rescuegrid_core PRIVATE /W4 /permissive-)
     target_compile_options(RescueGrid PRIVATE /W4 /permissive-)
 else()
+    target_compile_options(rescuegrid_core PRIVATE -Wall -Wextra -Wpedantic)
     target_compile_options(RescueGrid PRIVATE -Wall -Wextra -Wpedantic)
 endif()
+
+# Automated unit testing target and CTest integration
+enable_testing()
+
+add_executable(rescuegrid_tests
+    tests/test_main.cpp
+)
+
+target_link_libraries(rescuegrid_tests PRIVATE rescuegrid_core)
+
+if(MSVC)
+    target_compile_options(rescuegrid_tests PRIVATE /W4 /permissive-)
+else()
+    target_compile_options(rescuegrid_tests PRIVATE -Wall -Wextra -Wpedantic)
+endif()
+
+add_test(NAME CoreClassTests COMMAND rescuegrid_tests)
