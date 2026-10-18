@@ -161,6 +161,7 @@ void handleSearchIncident(const RescueManager& manager) {
     const Incident* incident = manager.findIncident(id);
     if (incident) {
         std::cout << "  [+] Found: " << incident->toString() << "\n";
+        std::cout << "      Grid Location: " << incident->getPosition() << "\n";
     } else {
         std::cout << "  [-] No incident found with ID '" << id << "'.\n";
     }
@@ -276,6 +277,7 @@ void handleDispatch(RescueManager& manager) {
         std::cout << "  [+] Dispatch successful!\n";
         if (inc) {
             std::cout << "      " << inc->toString() << "\n";
+            std::cout << "      Dispatched to scene at: " << inc->getPosition() << "\n";
         }
     } catch (const std::exception& ex) {
         std::cout << "  [-] Dispatch rejected: " << ex.what() << "\n";
@@ -343,7 +345,7 @@ int main() {
     std::cout << "                    RescueGrid                      \n";
     std::cout << "====================================================\n";
     std::cout << "Description : Disaster response and evacuation simulator\n";
-    std::cout << "Phase       : Phase 3 - Incident & Resource Management\n";
+    std::cout << "Phase       : Phase 4 - Mid-Semester OOP Demonstration\n";
     std::cout << "Status      : System initialized successfully.\n";
     std::cout << "====================================================\n";
 
