@@ -25,6 +25,14 @@ RescueGrid adheres to object-oriented programming principles, strict encapsulati
 ### 1. `Position`
 - **Purpose**: Represents a 2D discrete coordinate `(x, y)` on the simulation grid.
 - **Encapsulation**: Coordinates are stored privately (`m_x`, `m_y`) with const accessors (`getX()`, `getY()`) and formatted string rendering (`toString()`).
+- **Constructor Overloading**:
+  - `Position()`: Explicit default constructor initializing coordinates to `(0, 0)`.
+  - `Position(int x, int y)`: Parameterized constructor initializing coordinates to specified values.
+- **Operator Overloading**:
+  - `bool operator==(const Position& other) const`: Equality comparison returning `true` only if both `m_x == other.m_x` and `m_y == other.m_y`.
+  - `bool operator!=(const Position& other) const`: Inequality comparison delegating cleanly to `!(*this == other)`.
+- **Friend Function**:
+  - `friend std::ostream& operator<<(std::ostream& os, const Position& pos)`: Stream insertion operator declared as a friend in `Position.h` and defined in `Position.cpp`, directly accessing private coordinates to output `(x, y)` and supporting stream chaining.
 
 ### 2. `Incident`
 - **Purpose**: Models an active urban emergency event.
@@ -32,7 +40,7 @@ RescueGrid adheres to object-oriented programming principles, strict encapsulati
   - `m_id`: Unique identifier (string, non-empty validation).
   - `m_type`: Categorization via `IncidentType` (`Fire`, `Flood`, `StructuralCollapse`).
   - `m_severity`: Severity rating on a validated scale of 1 (minor) to 5 (catastrophic).
-  - `m_position`: Location on the grid represented by a `Position` object.
+  - `m_position`: Location on the grid represented by a `Position` object (demonstrating composition).
   - `m_status`: Lifecycle status via `IncidentStatus` (`Reported`, `InProgress`, `Resolved`).
   - `m_assignedResponderId`, `m_assignedVehicleId`: Identifiers of emergency units actively deployed to this incident.
 - **Encapsulation**: Strict constructor validation enforces class invariants (throwing `std::invalid_argument` on invalid severity or blank ID). Status and assigned resources are modified via controlled methods (`setStatus()`, `assignResources()`, `releaseResources()`).
@@ -45,7 +53,10 @@ RescueGrid adheres to object-oriented programming principles, strict encapsulati
   - `m_specialization`: Expertise category via `ResponderSpecialization` (`Firefighter`, `Paramedic`, `RescueSpecialist`).
   - `m_position`: Current grid coordinates (`Position`).
   - `m_isAvailable`: Operational deployment availability flag (`bool`).
-- **Encapsulation**: Movement and dispatch are controlled via `setPosition()` and `setAvailability()`. Designed with a virtual destructor for seamless future extension into an abstract hierarchy.
+- **Encapsulation & Method Overloading**:
+  - Movement and dispatch are controlled via `setPosition()` and `setAvailability()`.
+  - Overloaded `void setPosition(const Position& position)` and `void setPosition(int x, int y)`, where the latter constructs a `Position(x, y)` and delegates to the primary setter.
+  - Designed with a virtual destructor for seamless future extension into an abstract hierarchy.
 
 ### 4. `RescueVehicle`
 - **Purpose**: Models an emergency response vehicle in the fleet.
@@ -54,7 +65,9 @@ RescueGrid adheres to object-oriented programming principles, strict encapsulati
   - `m_type`: Vehicle classification via `VehicleType` (`FireEngine`, `Ambulance`, `RescueVan`).
   - `m_position`: Current deployment location (`Position`).
   - `m_isAvailable`: Fleet availability status (`bool`).
-- **Encapsulation**: State transitions are controlled through dedicated `setPosition()` and `setAvailability()` member functions.
+- **Encapsulation & Method Overloading**:
+  - State transitions are controlled through dedicated `setPosition()` and `setAvailability()` member functions.
+  - Overloaded `void setPosition(const Position& position)` and `void setPosition(int x, int y)`, where the latter constructs a `Position(x, y)` and delegates to the primary setter.
 
 ---
 
@@ -181,16 +194,21 @@ Or execute the test binary directly:
 
 ## Current Project Scope
 
-This project is currently in **Phase 3: Incident and Resource Management**.
+This project is currently in **Phase 4: Mid-Semester OOP Concept Demonstration**.
 
-The scope of this phase includes:
-- Centralized entity management via `RescueManager`.
-- Deterministic resource dispatch and automatic resource release on incident resolution.
-- Interactive, menu-driven CLI with robust input validation.
-- Automated unit test suite (12 test suites) covering core classes, manager operations, dispatch edge cases, lifecycle transition rules, and double-assignment prevention.
-- Seamless CTest and CMake integration.
+The scope demonstrates key second-year Computer Science OOP principles prior to introducing inheritance:
+- **Classes & Objects**: Strong domain entity models (`Position`, `Incident`, `Responder`, `RescueVehicle`, `RescueManager`).
+- **Encapsulation & Data Hiding**: Private member variables with validated getters/setters and lifecycle invariant enforcement.
+- **Constructors & Destructors**: Default, parameterized, and virtual destructors ensuring clean object lifecycle handling.
+- **Composition**: Storing `Position` value objects directly within `Incident`, `Responder`, and `RescueVehicle`.
+- **Constructor Overloading**: `Position()` default constructor and `Position(int, int)` parameterized constructor.
+- **Function/Method Overloading**: `setPosition(const Position&)` and `setPosition(int, int)` in `Responder` and `RescueVehicle`.
+- **Operator Overloading**: `operator==` and `operator!=` in `Position` for natural coordinate comparisons.
+- **Friend Functions**: `operator<<` declared as a friend in `Position` for seamless stream insertion and formatted rendering.
+- **Resource & Lifecycle Management**: Centralized deterministic dispatch, transition validation, and automatic release via `RescueManager`.
+- **Automated Verification**: Comprehensive unit test suite (13 test suites) integrated with CMake and CTest.
 
-*Excluded from this phase*: Inheritance/polymorphic hierarchies, AI pathfinding, optimization algorithms, constraint satisfaction, graphical user interfaces, databases, and network communication.
+*Strictly excluded from this phase*: Inheritance/polymorphic hierarchies (reserved for post-midterm), AI pathfinding, optimization algorithms, constraint satisfaction, graphical user interfaces, databases, and network communication.
 
 ---
 
@@ -201,12 +219,14 @@ The scope of this phase includes:
 2. **Stage 2: Core Domain Model & Management** *(Completed)*
    - Core domain classes and encapsulation (`Position`, `Incident`, `Responder`, `RescueVehicle`).
    - Incident & resource management (`RescueManager`), deterministic dispatch, and interactive CLI.
-3. **Stage 3: Abstract Hierarchy & Polymorphism** *(Next Stage)*
+3. **Stage 3: Mid-Semester OOP Concepts Demonstration** *(Completed - Phase 4)*
+   - Constructor and method overloading, operator overloading (`==`, `!=`), and friend functions (`<<`).
+4. **Stage 4: Abstract Hierarchy & Polymorphism** *(Next Stage - Post-Midterm)*
    - Abstract `Responder` and `Vehicle` base classes with polymorphic behaviors.
    - Spatial city grid container.
-4. **Stage 4: Simulation Engine & Event Loop**
+5. **Stage 5: Simulation Engine & Event Loop**
    - Discrete time-stepping, hazard propagation, and automated dispatch logic.
-5. **Stage 5: Evacuation & Routing Algorithms**
+6. **Stage 6: Evacuation & Routing Algorithms**
    - Pathfinding, resource allocation, and evacuation optimization strategies.
-6. **Stage 6: Verification, Benchmarking & Tooling**
+7. **Stage 7: Verification, Benchmarking & Tooling**
    - Extended scenario suites, performance benchmarks, and reporting.

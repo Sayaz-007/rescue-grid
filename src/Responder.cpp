@@ -47,6 +47,10 @@ void Responder::setPosition(const Position& newPosition) {
     m_position = newPosition;
 }
 
+void Responder::setPosition(int x, int y) {
+    setPosition(Position(x, y));
+}
+
 void Responder::setAvailability(bool available) {
     m_isAvailable = available;
 }

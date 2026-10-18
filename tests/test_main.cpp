@@ -5,6 +5,7 @@
 #include "rescuegrid/RescueManager.h"
 
 #include <iostream>
+#include <sstream>
 #include <string>
 #include <stdexcept>
 #include <vector>
@@ -150,6 +151,12 @@ bool testResponderConstructionAndUpdates() {
     EXPECT_EQ(resp.getPosition().getX(), 12, "Updated position X");
     EXPECT_EQ(resp.getPosition().getY(), 34, "Updated position Y");
 
+    // Overloaded position update: setPosition(int, int)
+    resp.setPosition(56, 78);
+    EXPECT_EQ(resp.getPosition().getX(), 56, "Overloaded position X");
+    EXPECT_EQ(resp.getPosition().getY(), 78, "Overloaded position Y");
+    EXPECT_EQ(resp.getPosition(), Position(56, 78), "Overloaded position matches Position(56, 78)");
+
     // Availability update
     resp.setAvailability(false);
     EXPECT_TRUE(!resp.isAvailable(), "Updated availability should be false");
@@ -192,6 +199,12 @@ bool testRescueVehicleConstructionAndUpdates() {
     vehicle.setPosition(scene);
     EXPECT_EQ(vehicle.getPosition().getX(), 20, "Updated vehicle position X");
     EXPECT_EQ(vehicle.getPosition().getY(), 30, "Updated vehicle position Y");
+
+    // Overloaded position update: setPosition(int, int)
+    vehicle.setPosition(77, 88);
+    EXPECT_EQ(vehicle.getPosition().getX(), 77, "Overloaded vehicle position X");
+    EXPECT_EQ(vehicle.getPosition().getY(), 88, "Overloaded vehicle position Y");
+    EXPECT_EQ(vehicle.getPosition(), Position(77, 88), "Overloaded vehicle position matches Position(77, 88)");
 
     // Availability update
     vehicle.setAvailability(false);
@@ -586,6 +599,95 @@ bool testIncidentLifecycleAndInvalidTransitions() {
 }
 
 // ============================================================================
+// Phase 4 Operator and Function Overloading Tests
+// ============================================================================
+
+bool testPositionOperatorsAndOverloading() {
+    std::cout << "Running testPositionOperatorsAndOverloading...\n";
+
+    // Requirement 6: Default constructor initializes to (0, 0)
+    Position pDefault;
+    EXPECT_EQ(pDefault.getX(), 0, "Default Position constructor X is 0");
+    EXPECT_EQ(pDefault.getY(), 0, "Default Position constructor Y is 0");
+    EXPECT_EQ(pDefault.toString(), "(0, 0)", "Default Position toString format");
+
+    // Requirement 7: Parameterized constructor initializes to given coordinates
+    Position pParam(15, 20);
+    EXPECT_EQ(pParam.getX(), 15, "Parameterized Position constructor X");
+    EXPECT_EQ(pParam.getY(), 20, "Parameterized Position constructor Y");
+    EXPECT_EQ(pParam.toString(), "(15, 20)", "Parameterized Position toString format");
+
+    Position pNegative(-8, -42);
+    EXPECT_EQ(pNegative.getX(), -8, "Negative Position constructor X");
+    EXPECT_EQ(pNegative.getY(), -42, "Negative Position constructor Y");
+
+    // Requirement 1: pos1 == pos2 returns true when coordinates are identical
+    Position p1(10, 20);
+    Position p2(10, 20);
+    EXPECT_TRUE(p1 == p2, "Identical positions must compare equal with operator==");
+    EXPECT_TRUE(pDefault == Position(0, 0), "Default position equals Position(0, 0)");
+
+    // Requirement 2: pos1 != pos2 returns true when x differs, y differs, or both differ
+    Position pDiffX(11, 20);
+    Position pDiffY(10, 21);
+    Position pDiffBoth(99, 88);
+
+    EXPECT_TRUE(p1 != pDiffX, "operator!= returns true when X differs");
+    EXPECT_TRUE(p1 != pDiffY, "operator!= returns true when Y differs");
+    EXPECT_TRUE(p1 != pDiffBoth, "operator!= returns true when both X and Y differ");
+
+    EXPECT_TRUE(!(p1 == pDiffX), "operator== returns false when X differs");
+    EXPECT_TRUE(!(p1 == pDiffY), "operator== returns false when Y differs");
+    EXPECT_TRUE(!(p1 == pDiffBoth), "operator== returns false when both X and Y differ");
+
+    // Requirement 3: operator!= is the logical inverse of operator==
+    EXPECT_TRUE((p1 == p2) == !(p1 != p2), "operator!= must be logical inverse of operator== for equal positions");
+    EXPECT_TRUE((p1 == pDiffX) == !(p1 != pDiffX), "operator!= must be logical inverse of operator== for diff X");
+    EXPECT_TRUE((p1 == pDiffY) == !(p1 != pDiffY), "operator!= must be logical inverse of operator== for diff Y");
+    EXPECT_TRUE((p1 == pDiffBoth) == !(p1 != pDiffBoth), "operator!= must be logical inverse of operator== for diff both");
+
+    // Requirement 4: Stream insertion formatting: std::ostringstream << Position(15, 20) -> "(15, 20)"
+    std::ostringstream oss;
+    oss << Position(15, 20);
+    EXPECT_EQ(oss.str(), "(15, 20)", "Stream insertion matches (15, 20)");
+
+    // Requirement 5: Stream insertion chaining: oss << "At " << pos << " confirmed"
+    std::ostringstream ossChain;
+    Position loc(1, 2);
+    ossChain << "At " << loc << " confirmed";
+    EXPECT_EQ(ossChain.str(), "At (1, 2) confirmed", "Stream insertion chaining produces expected output");
+
+    // Stream insertion matches toString() output
+    std::ostringstream ossMatch;
+    Position matchPos(33, -99);
+    ossMatch << matchPos;
+    EXPECT_EQ(ossMatch.str(), matchPos.toString(), "Stream insertion matches toString() result");
+
+    // Requirement 8: Overloaded Responder::setPosition(int, int) matches setPosition(Position)
+    Position basePos(0, 0);
+    Responder resp1("R-OV1", "Alice", ResponderSpecialization::Firefighter, basePos);
+    Responder resp2("R-OV2", "Bob", ResponderSpecialization::Firefighter, basePos);
+
+    resp1.setPosition(Position(25, 35));
+    resp2.setPosition(25, 35);
+    EXPECT_EQ(resp2.getPosition(), resp1.getPosition(), "Responder setPosition(int, int) matches setPosition(Position)");
+    EXPECT_EQ(resp2.getPosition().getX(), 25, "Responder X after setPosition(int, int)");
+    EXPECT_EQ(resp2.getPosition().getY(), 35, "Responder Y after setPosition(int, int)");
+
+    // Requirement 9: Overloaded RescueVehicle::setPosition(int, int) matches setPosition(Position)
+    RescueVehicle veh1("V-OV1", VehicleType::FireEngine, basePos);
+    RescueVehicle veh2("V-OV2", VehicleType::FireEngine, basePos);
+
+    veh1.setPosition(Position(45, 55));
+    veh2.setPosition(45, 55);
+    EXPECT_EQ(veh2.getPosition(), veh1.getPosition(), "RescueVehicle setPosition(int, int) matches setPosition(Position)");
+    EXPECT_EQ(veh2.getPosition().getX(), 45, "RescueVehicle X after setPosition(int, int)");
+    EXPECT_EQ(veh2.getPosition().getY(), 55, "RescueVehicle Y after setPosition(int, int)");
+
+    return true;
+}
+
+// ============================================================================
 // Test Suite Runner
 // ============================================================================
 
@@ -595,7 +697,7 @@ int main() {
     std::cout << "========================================\n";
 
     int passed = 0;
-    int total = 12;
+    int total = 13;
 
     // Phase 2 Core Tests
     if (testPositionCoordinates()) {
@@ -646,6 +748,12 @@ int main() {
     }
     if (testIncidentLifecycleAndInvalidTransitions()) {
         std::cout << "  [PASS] testIncidentLifecycleAndInvalidTransitions\n";
+        passed++;
+    }
+
+    // Phase 4 Operator and Function Overloading Tests
+    if (testPositionOperatorsAndOverloading()) {
+        std::cout << "  [PASS] testPositionOperatorsAndOverloading\n";
         passed++;
     }
 

@@ -68,6 +68,13 @@ public:
     void setPosition(const Position& newPosition);
 
     /**
+     * @brief Overloaded method to update the vehicle's position using discrete coordinates.
+     * @param x Horizontal coordinate.
+     * @param y Vertical coordinate.
+     */
+    void setPosition(int x, int y);
+
+    /**
      * @brief Controlled method to update vehicle availability.
      * @param available Updated availability status.
      */

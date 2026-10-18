@@ -2,6 +2,7 @@
 #define RESCUEGRID_POSITION_H
 
 #include <string>
+#include <ostream>
 
 namespace rescuegrid {
 
@@ -15,11 +16,38 @@ namespace rescuegrid {
 class Position {
 public:
     /**
-     * @brief Constructs a Position with specified x and y coordinates.
-     * @param x Horizontal coordinate (defaults to 0).
-     * @param y Vertical coordinate (defaults to 0).
+     * @brief Default constructor initializing coordinates to origin (0, 0).
      */
-    explicit Position(int x = 0, int y = 0);
+    Position();
+
+    /**
+     * @brief Parameterized constructor initializing coordinates to specified values.
+     * @param x Horizontal coordinate.
+     * @param y Vertical coordinate.
+     */
+    Position(int x, int y);
+
+    /**
+     * @brief Equality operator comparing coordinates.
+     * @param other The position to compare with.
+     * @return True if both x and y coordinates match, false otherwise.
+     */
+    bool operator==(const Position& other) const;
+
+    /**
+     * @brief Inequality operator comparing coordinates.
+     * @param other The position to compare with.
+     * @return True if either coordinate differs, false otherwise.
+     */
+    bool operator!=(const Position& other) const;
+
+    /**
+     * @brief Friend function for stream insertion output formatting.
+     * @param os Target output stream.
+     * @param pos Position instance to write.
+     * @return Reference to the target output stream for chaining.
+     */
+    friend std::ostream& operator<<(std::ostream& os, const Position& pos);
 
     /**
      * @brief Gets the horizontal coordinate.

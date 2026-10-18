@@ -38,6 +38,10 @@ void RescueVehicle::setPosition(const Position& newPosition) {
     m_position = newPosition;
 }
 
+void RescueVehicle::setPosition(int x, int y) {
+    setPosition(Position(x, y));
+}
+
 void RescueVehicle::setAvailability(bool available) {
     m_isAvailable = available;
 }
