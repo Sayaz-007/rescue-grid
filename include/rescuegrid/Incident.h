@@ -10,7 +10,7 @@ namespace rescuegrid {
 /**
  * @brief Categorization of disaster events within the simulator.
  */
-enum class IncidentType {
+enum class IncidentType { //enum basically makes a custom data type(like int has 1,2..., the enum incidenttype creates a datatype with valid values fire,flood etc)
     Fire,
     Flood,
     StructuralCollapse
