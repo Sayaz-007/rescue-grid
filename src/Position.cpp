@@ -1,5 +1,4 @@
 #include "rescuegrid/Position.h"
-
 #include <iostream>
 
 namespace rescuegrid {
@@ -39,4 +38,4 @@ void Position::display() const {
     std::cout << toString() << "\n";
 }
 
-} // namespace rescuegrid
+}

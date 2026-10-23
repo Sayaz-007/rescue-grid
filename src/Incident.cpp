@@ -3,7 +3,7 @@
 #include <stdexcept>
 
 //function definitions for all the functions in the incident.h file
-namespace rescuegrid {
+namespace rescuegrid{
 
 Incident::Incident(const std::string& id,
                    IncidentType type,
@@ -18,10 +18,10 @@ Incident::Incident(const std::string& id,
       m_assignedResponderId(""),
       m_assignedVehicleId(""){
     if(m_id.empty()){
-        throw std::invalid_argument("Incident ID cannot be empty.");
+        throw std::invalid_argument("Incident ID cannot be empty");
     }
     if(m_severity<1||m_severity>5){
-        throw std::invalid_argument("Incident severity must be between 1 and 5 (inclusive). Given: " +std::to_string(severity));
+        throw std::invalid_argument("Severity must be between 1 and 5(inclusive).");
     }
 }
 
@@ -88,8 +88,8 @@ const std::string& Incident::getAssignedVehicleId() const{
 }
 
 void Incident::assignResources(const std::string& responderId, const std::string& vehicleId){
-    m_assignedResponderId = responderId;
-    m_assignedVehicleId = vehicleId;
+    m_assignedResponderId=responderId;
+    m_assignedVehicleId=vehicleId;
 }
 
 void Incident::releaseResources(){
@@ -104,7 +104,7 @@ std::string Incident::toString() const{
            ", Location: "+m_position.toString()+
            ", Status: "+getStatusString();
     if(hasAssignedResources()){
-        result+=", Assigned: (Responder: " + m_assignedResponderId+
+        result+=", Assigned: (Responder: "+m_assignedResponderId+
                   ", Vehicle: "+m_assignedVehicleId +")";
     }
     result+="]";
