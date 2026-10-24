@@ -6,21 +6,21 @@ namespace rescuegrid{
 void RescueManager::registerIncident(const Incident& incident)
 {
     if (hasIncident(incident.getId()))
-        throw std::invalid_argument("Incident with ID <" + incident.getId() + "> already exists.");
+        throw std::invalid_argument("Incident with ID <"+incident.getId() +"> already exists.");
     m_incidents.push_back(incident);
 }
 
 void RescueManager::registerResponder(const Responder& responder)
 {
     if (hasResponder(responder.getId()))
-        throw std::invalid_argument("Responder with ID <" + responder.getId() + "> already exists.");
+        throw std::invalid_argument("Responder with ID <"+responder.getId()+"> already exists.");
     m_responders.push_back(responder);
 }
 
 void RescueManager::registerVehicle(const RescueVehicle& vehicle)
 {
     if (hasVehicle(vehicle.getId()))
-        throw std::invalid_argument("Vehicle with ID <" + vehicle.getId() + "> already exists.");
+        throw std::invalid_argument("Vehicle with ID <"+vehicle.getId()+"> already exists.");
     m_vehicles.push_back(vehicle);
 }
 
@@ -116,15 +116,15 @@ bool RescueManager::dispatchResources(const std::string& incidentId)
 {
     Incident* inc=findIncident(incidentId);
     if (!inc) {
-        throw std::invalid_argument("Incident with ID <" + incidentId + "> does not exist");
+        throw std::invalid_argument("Incident with ID <"+incidentId+"> does not exist");
     }
 
     if (inc->getStatus()==IncidentStatus::Resolved) {
-        throw std::logic_error("Incident <" + incidentId + "> is already resolved and cannot receive resources");
+        throw std::logic_error("Incident <"+incidentId+"> is already resolved and cannot receive resources");
     }
 
     if (inc->getStatus()==IncidentStatus::InProgress || inc->hasAssignedResources()) {
-        throw std::logic_error("Incident <" + incidentId + "> already has active resources assigned");
+        throw std::logic_error("Incident <"+incidentId+"> already has active resources assigned");
     }
 
     //select the first available responder
@@ -200,7 +200,7 @@ void RescueManager::updateIncidentStatus(const std::string& incidentId, Incident
             throw std::logic_error("Active incident <"+incidentId+ "> is already in progress and cannot be changed to reported!");
         }
         if(newStatus==IncidentStatus::InProgress) {
-            throw std::logic_error("Incident <" + incidentId + "> is already in progress");
+            throw std::logic_error("Incident <"+incidentId+"> is already in progress");
         }
         if(newStatus==IncidentStatus::Resolved)
         {
@@ -223,7 +223,7 @@ void RescueManager::updateIncidentStatus(const std::string& incidentId, Incident
         }
     }
 
-    throw std::logic_error("Invalid status transition requested for incident '"+incidentId+"'.");
+    throw std::logic_error("Invalid status transition requested for incident <"+incidentId+">");
 }
 
 std::size_t RescueManager::getIncidentCount() const
