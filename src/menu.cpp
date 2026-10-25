@@ -66,7 +66,7 @@ bool readNonEmptyString(const std::string& prompt, std::string& outStr) {
  * @param maxVal Maximum acceptable value.
  * @return True if a valid integer was read, false on EOF.
  */
-bool readInt(const std::string& prompt,int& outVal,int minVal = std::numeric_limits<int>::min(),int maxVal = std::numeric_limits<int>::max())
+bool readInt(const std::string& prompt,int& outVal,int minVal,int maxVal)
 {
     while (true) {
         std::cout<<prompt;
