@@ -1,8 +1,8 @@
 #ifndef RESCUEGRID_POSITION_H
 #define RESCUEGRID_POSITION_H
 
-#include <string>
-#include <ostream>
+#include<string>
+#include<ostream>
 
 namespace rescuegrid{
 

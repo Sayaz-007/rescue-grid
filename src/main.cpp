@@ -1,14 +1,14 @@
-#include "rescuegrid/Position.h"
-#include "rescuegrid/Incident.h"
-#include "rescuegrid/Responder.h"
-#include "rescuegrid/RescueVehicle.h"
-#include "rescuegrid/RescueManager.h"
-#include "rescuegrid/menu.h"
-#include <iostream>
-#include <string>
-#include <sstream>
-#include <limits>
-#include <stdexcept>
+#include"rescuegrid/Position.h"
+#include"rescuegrid/Incident.h"
+#include"rescuegrid/Responder.h"
+#include"rescuegrid/RescueVehicle.h"
+#include"rescuegrid/RescueManager.h"
+#include"rescuegrid/menu.h"
+#include<iostream>
+#include<string>
+#include<sstream>
+#include<limits>
+#include<stdexcept>
 
 using namespace rescuegrid;
 int main() 
@@ -22,7 +22,7 @@ int main()
     std::cout<<"====================================================\n";
 
     RescueManager manager;
-    seedInitialData(manager);
+    setInitialData(manager);
     std::cout<<"Preloaded demonstration data:\n";
     std::cout<<"  - 2 Incidents  (INC-101, INC-102)\n";
     std::cout<<"  - 2 Responders (RES-01, RES-02)\n";

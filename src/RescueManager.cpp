@@ -1,5 +1,5 @@
-#include "rescuegrid/RescueManager.h"
-#include <stdexcept>
+#include"rescuegrid/RescueManager.h"
+#include<stdexcept>
 
 namespace rescuegrid
 {
@@ -128,7 +128,7 @@ namespace rescuegrid
             throw std::logic_error("Incident <"+incidentId+"> is already resolved and cannot receive resources");
         }
 
-        if (inc->getStatus()==IncidentStatus::InProgress || inc->hasAssignedResources())
+        if (inc->getStatus()==IncidentStatus::InProgress||inc->hasAssignedResources())
         {
             throw std::logic_error("Incident <"+incidentId+"> already has active resources assigned");
         }

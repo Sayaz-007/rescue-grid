@@ -1,10 +1,11 @@
 #ifndef RESCUEGRID_RESPONDER_H
 #define RESCUEGRID_RESPONDER_H
 
-#include "rescuegrid/Position.h"
-#include <string>
+#include"rescuegrid/Position.h"
+#include<string>
 
-namespace rescuegrid{  
+namespace rescuegrid
+{  
 
     enum class ResponderSpecialization
     {
@@ -24,9 +25,7 @@ namespace rescuegrid{
         public:
             Responder(const std::string& id,const std::string& name,ResponderSpecialization specialization,const Position& position,bool isAvailable = true);
 
-            /**
-             * @brief Virtual destructor to support future polymorphic hierarchies.
-             */
+           
             virtual ~Responder() = default;
 
             //get functions
@@ -54,6 +53,6 @@ namespace rescuegrid{
             bool m_isAvailable;
     };
 
-} // namespace rescuegrid
+} 
 
-#endif // RESCUEGRID_RESPONDER_H
+#endif 

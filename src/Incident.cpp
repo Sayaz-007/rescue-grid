@@ -1,6 +1,6 @@
-#include "rescuegrid/Incident.h"
-#include <iostream>
-#include <stdexcept>
+#include"rescuegrid/Incident.h"
+#include<iostream>
+#include<stdexcept>
 
 //function definitions for all the functions in the incident.h file
 namespace rescuegrid

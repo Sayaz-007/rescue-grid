@@ -1,9 +1,8 @@
 #ifndef RESCUEGRID_RESCUEVEHICLE_H
 #define RESCUEGRID_RESCUEVEHICLE_H
 
-#include "rescuegrid/Position.h"
-
-#include <string>
+#include"rescuegrid/Position.h"
+#include<string>
 
 namespace rescuegrid
 {
@@ -20,14 +19,7 @@ namespace rescuegrid
     class RescueVehicle
     {
         public:
-            /**
-             * @brief Constructs and validates a RescueVehicle.
-             * @param id Unique identification code for the vehicle (cannot be empty).
-             * @param type Vehicle classification.
-             * @param position Initial position on the grid.
-             * @param isAvailable Operational availability flag (defaults to true).
-             * @throws std::invalid_argument if id is empty.
-             */
+           
             RescueVehicle(const std::string& id,VehicleType type,const Position& position,bool isAvailable = true);
 
             //get functions

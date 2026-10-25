@@ -1,13 +1,13 @@
 #ifndef RESCUEGRID_RESCUEMANAGER_H
 #define RESCUEGRID_RESCUEMANAGER_H
 
-#include "rescuegrid/Incident.h"
-#include "rescuegrid/Responder.h"
-#include "rescuegrid/RescueVehicle.h"
+#include"rescuegrid/Incident.h"
+#include"rescuegrid/Responder.h"
+#include"rescuegrid/RescueVehicle.h"
 
-#include <vector>
-#include <string>
-#include <cstddef>
+#include<vector>
+#include<string>
+#include<cstddef>
 
 namespace rescuegrid
 {
