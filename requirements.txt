@@ -1,0 +1,10 @@
+# RescueGrid Python Implementation
+# Course: Artificial Intelligence with Python
+#
+# Requires: Python >= 3.11
+#
+# Core dependencies:
+matplotlib>=3.7.0
+#
+# Optional development dependencies:
+# pytest>=7.4.0
